@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Dagre-D3-flow</title>
+  <script src="https://cdn.bootcss.com/d3/5.9.2/d3.min.js"></script>
+  <script src="https://cdn.bootcss.com/dagre-d3/0.6.3/dagre-d3.min.js"></script>
+</head>
+
+<body>
+  <svg width="960" id="flow-svg" style="display:block;margin:auto;"></svg>
+  <script>
+    const data = [{ "nodeName": "receive_worker", "nodeDesc": "收单", "nodeIcon": "<svg viewBox=\"0 0 1024 1280\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"80\">\r\n\t<path d=\"M768 64V0H256v64H64v896h896V64zM320 64h384v64H320z m576 832H128V128h128v64h512V128h128z\"></path>\r\n\t<path d=\"M448 594.56L342.4 489.6l-44.8 44.8L448 685.44l278.4-279.04-44.8-44.8L448 594.56z\"></path>\r\n\t<text x=\"25%\" y=\"1216\" font-size=\"14rem\">收单</text>\r\n</svg>", "nodeType": "1", "nodeId": "3db4a0c3-de2f-48e2-b802-e86a7795", "nextNodeId": "6cfa1855-6b4a-45f2-ac65-03c876a0" }, { "nodeName": "ap", "nodeDesc": "AP配置", "nodeIcon": "<svg viewBox=\"0 0 1024 1280\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"80\">\r\n\t<path\r\n\t  d=\"M972.8 571.733333c-25.6-42.666667-8.533333-93.866667 34.133333-119.466666l-45.511111-76.8c-14.222222 8.533333-28.444444 11.377778-45.511111 11.377777-48.355556 0-91.022222-39.822222-91.022222-88.177777h-93.866667c0 14.222222-2.844444 31.288889-11.377778 42.666666-25.6 42.666667-79.644444 54.044444-122.311111 31.288889l-45.511111 76.8c14.222222 8.533333 25.6 17.066667 34.133334 31.288889 25.6 42.666667 8.533333 93.866667-34.133334 119.466667l45.511111 76.8c14.222222-8.533333 28.444444-11.377778 45.511111-11.377778 48.355556 0 88.177778 39.822222 91.022223 85.333333H824.888889c0-14.222222 2.844444-28.444444 11.377778-42.666666 25.6-42.666667 79.644444-54.044444 122.311111-31.288889l45.511111-76.8c-11.377778-2.844444-25.6-14.222222-31.288889-28.444445z m-196.266667 48.355556c-54.044444 0-96.711111-42.666667-96.711111-91.022222s42.666667-91.022222 96.711111-91.022223 96.711111 42.666667 96.711111 91.022223-42.666667 91.022222-96.711111 91.022222z\">\r\n\t</path>\r\n\t<path\r\n\t  d=\"M731.022222 944.355556h-625.777778v-853.333334h625.777778v133.688889h56.888889V34.133333h-739.555555v967.111111h739.555555v-150.755555h-56.888889z\">\r\n\t</path>\r\n\t<path\r\n\t  d=\"M162.133333 329.955556h341.333334v56.888888h-341.333334zM162.133333 500.622222h341.333334v56.888889h-341.333334zM162.133333 671.288889h341.333334v56.888889h-341.333334z\">\r\n\t</path>\r\n\t<text x=\"0\" y=\"1216\" font-size=\"14rem\">AP配置</text>\r\n</svg>", "nodeType": "2", "nodeId": "6cfa1855-6b4a-45f2-ac65-03c876a0", "nextNodeId": "aae5a1c3-e4a9-4f8a-a1f4-629fc37b" }, { "nodeName": "receipt_worker", "nodeDesc": "回单", "nodeIcon": "<svg viewBox=\"0 0 1024 1280\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"80\">\r\n\t<path d=\"M768 64V0H256v64H64v896h576v-64H128V128h128v64h512V128h128v512h64V64z m-64 64H320V64h384z\"></path>\r\n\t<path d=\"M832 640V576H576v256h64v-146.56l265.6 264.96 44.8-44.8L685.44 640H832z\"></path>\r\n\t<text x=\"25%\" y=\"1216\" font-size=\"14rem\">回单</text>\r\n</svg>", "nodeType": "0", "nodeId": "aae5a1c3-e4a9-4f8a-a1f4-629fc37b" }];
+
+    let svg;
+    let svgGroup;
+    let renderFlow;
+
+    function formatFlowNode(initNodes) {
+      const edges = [];
+      initNodes.forEach(node => {
+        if (node.nextNodeId) {
+          if (node.nextNodeId instanceof Array) {
+            node.nextNodeId.forEach(isId => edges.push({ start: node.nodeId, end: isId }));
+          } else {
+            edges.push({ start: node.nodeId, end: node.nextNodeId });
+          }
+        }
+      })
+      setTimeout(() => renderFlowNode(initNodes, edges), 100);
+    };
+
+    function renderFlowNode(nodes, edges) {
+      const g = new dagreD3.graphlib.Graph().setGraph({ rankdir: 'LR' });
+      if ('undefined' === (typeof svg)) {
+        svg = d3.select('#flow-svg');
+        svgGroup = svg.append('g');
+        renderFlow = new dagreD3.render();
+      }
+      for (let i = 0, j = nodes.length; i < j; i++) {
+        const el = nodes[i];
+        const isNode = {
+          style: 'fill:#fff0',
+          labelType: 'svg',
+          label: document.createRange().createContextualFragment(el.nodeIcon),
+          labelStyle: 'fill:#bdbdbd'
+        };
+        g.setNode(el.nodeId, isNode);
+      }
+      for (let i = 0, j = edges.length; i < j; i++) {
+        g.setEdge(edges[i].start, edges[i].end, {
+          style: 'fill:#fff0;stroke: #bdbdbd;',
+          arrowheadStyle: 'fill:#bdbdbd;stroke: #bdbdbd;',
+          arrowhead: 'vee',
+          curve: d3.curveBasis
+        });
+      }
+      svgGroup.selectAll('g').remove();
+      renderFlow(svgGroup, g);
+      const xCenterOffset = (Number(svg.attr('width')) - g.graph().width) / 2;
+      svgGroup.attr('transform', `translate(${xCenterOffset},20)`);
+      svg.attr('height', g.graph().height + 40);
+    }
+
+    if (data.length > 0) {
+      formatFlowNode(data);
+    }
+  </script>
+</body>
+
+</html>
